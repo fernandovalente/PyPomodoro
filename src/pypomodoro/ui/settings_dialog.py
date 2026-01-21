@@ -18,12 +18,14 @@ from PySide6.QtWidgets import (
 )
 
 from pypomodoro.core.config import AppConfig
+from pypomodoro.core.i18n import get_strings
 
 
 class SettingsDialog(QDialog):
     def __init__(self, config: AppConfig, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Configuracoes")
+        self.strings = get_strings(config.language)
+        self.setWindowTitle(self.strings["settings_title"])
         self.setModal(True)
 
         self._work_input = QSpinBox()
@@ -42,41 +44,49 @@ class SettingsDialog(QDialog):
         self._theme_select.addItems(["light", "dark"])
         self._theme_select.setCurrentText(config.theme)
 
-        self._sound_enabled = QCheckBox("Som ativado")
+        self._language_select = QComboBox()
+        self._language_select.addItem(self.strings["language_pt"], "pt-BR")
+        self._language_select.addItem(self.strings["language_en"], "en")
+        self._language_select.setCurrentIndex(
+            0 if config.language == "pt-BR" else 1
+        )
+
+        self._sound_enabled = QCheckBox(self.strings["sound_enabled_label"])
         self._sound_enabled.setChecked(config.sound_enabled)
 
         self._sound_path = QLineEdit()
-        self._sound_path.setPlaceholderText("Arquivo de som")
+        self._sound_path.setPlaceholderText(self.strings["sound_placeholder"])
         self._sound_path.setText(config.sound_file)
         self._sound_path.setReadOnly(True)
 
-        self._sound_browse = QPushButton("Selecionar")
+        self._sound_browse = QPushButton(self.strings["select_sound"])
         self._sound_browse.clicked.connect(self._select_sound)
 
-        self._auto_start_break = QCheckBox("Auto iniciar pausas")
+        self._auto_start_break = QCheckBox(self.strings["auto_start_break"])
         self._auto_start_break.setChecked(config.auto_start_break)
 
-        self._auto_start_work = QCheckBox("Auto iniciar trabalho")
+        self._auto_start_work = QCheckBox(self.strings["auto_start_work"])
         self._auto_start_work.setChecked(config.auto_start_work)
 
         form = QFormLayout()
-        form.addRow("Trabalho (min)", self._work_input)
-        form.addRow("Pausa curta (min)", self._short_break_input)
-        form.addRow("Pausa longa (min)", self._long_break_input)
-        form.addRow("Tema", self._theme_select)
+        form.addRow(self.strings["work_label"], self._work_input)
+        form.addRow(self.strings["short_break_label"], self._short_break_input)
+        form.addRow(self.strings["long_break_label"], self._long_break_input)
+        form.addRow(self.strings["language_label"], self._language_select)
+        form.addRow(self.strings["theme_label"], self._theme_select)
         form.addRow("", self._sound_enabled)
 
         sound_row = QHBoxLayout()
         sound_row.addWidget(self._sound_path, stretch=1)
         sound_row.addWidget(self._sound_browse)
-        form.addRow("Som", sound_row)
+        form.addRow(self.strings["sound_label"], sound_row)
         form.addRow("", self._auto_start_break)
         form.addRow("", self._auto_start_work)
 
         buttons = QHBoxLayout()
         buttons.addStretch(1)
-        save_button = QPushButton("Salvar")
-        cancel_button = QPushButton("Cancelar")
+        save_button = QPushButton(self.strings["save"])
+        cancel_button = QPushButton(self.strings["cancel"])
         save_button.clicked.connect(self.accept)
         cancel_button.clicked.connect(self.reject)
         buttons.addWidget(cancel_button)
@@ -93,6 +103,7 @@ class SettingsDialog(QDialog):
             work_minutes=self._work_input.value(),
             short_break_minutes=self._short_break_input.value(),
             long_break_minutes=self._long_break_input.value(),
+            language=self._language_select.currentData(),
             theme=self._theme_select.currentText(),
             sound_enabled=self._sound_enabled.isChecked(),
             sound_file=self._sound_path.text().strip(),
@@ -103,9 +114,9 @@ class SettingsDialog(QDialog):
     def _select_sound(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
             self,
-            "Selecionar som",
+            self.strings["select_sound"],
             str(Path.home()),
-            "Audio Files (*.wav);;Todos os arquivos (*)",
+            f'{self.strings["audio_filter"]};;{self.strings["all_files"]}',
         )
         if path:
             self._sound_path.setText(path)

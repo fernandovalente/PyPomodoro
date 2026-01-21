@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QIcon
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -12,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from pypomodoro.core.config import AppConfig, save_config
+from pypomodoro.core.i18n import get_strings
 from pypomodoro.core.notifications import send_notification
 from pypomodoro.core.sounds import SoundPlayer
 from pypomodoro.core.timer_engine import SessionState, TimerEngine, TimerEvent
@@ -19,11 +22,14 @@ from pypomodoro.ui.settings_dialog import SettingsDialog
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, config: AppConfig) -> None:
+    def __init__(self, config: AppConfig, icon_path: Path | None = None) -> None:
         super().__init__()
-        self.setWindowTitle("PyPomodoro")
-
         self.config = config
+        self.strings = get_strings(config.language)
+        self.setWindowTitle(self.strings["app_title"])
+        if icon_path:
+            self.setWindowIcon(QIcon(str(icon_path)))
+
         self.engine = TimerEngine(
             work_minutes=config.work_minutes,
             short_break_minutes=config.short_break_minutes,
@@ -50,7 +56,7 @@ class MainWindow(QMainWindow):
         layout.setSpacing(18)
         layout.setContentsMargins(24, 24, 24, 24)
 
-        self.state_label = QLabel("Foco")
+        self.state_label = QLabel(self.strings["state_focus"])
         self.state_label.setAlignment(Qt.AlignCenter)
         self.state_label.setFont(QFont("Arial", 18, QFont.Bold))
 
@@ -58,14 +64,14 @@ class MainWindow(QMainWindow):
         self.timer_label.setAlignment(Qt.AlignCenter)
         self.timer_label.setFont(QFont("Arial", 56, QFont.Bold))
 
-        self.cycle_label = QLabel("Ciclos completos: 0")
+        self.cycle_label = QLabel(self.strings["cycles_completed"].format(count=0))
         self.cycle_label.setAlignment(Qt.AlignCenter)
 
         buttons_row = QHBoxLayout()
-        self.start_pause_button = QPushButton("Iniciar")
-        self.reset_button = QPushButton("Resetar")
-        self.skip_button = QPushButton("Pular pausa")
-        self.settings_button = QPushButton("Configuracoes")
+        self.start_pause_button = QPushButton(self.strings["start"])
+        self.reset_button = QPushButton(self.strings["reset"])
+        self.skip_button = QPushButton(self.strings["skip_break"])
+        self.settings_button = QPushButton(self.strings["settings"])
 
         self.start_pause_button.clicked.connect(self._toggle_start_pause)
         self.reset_button.clicked.connect(self._reset_timer)
@@ -114,6 +120,8 @@ class MainWindow(QMainWindow):
             return
         self.config = dialog.get_config()
         save_config(self.config)
+        self.strings = get_strings(self.config.language)
+        self.setWindowTitle(self.strings["app_title"])
         self.engine.update_settings(
             work_minutes=self.config.work_minutes,
             short_break_minutes=self.config.short_break_minutes,
@@ -133,12 +141,12 @@ class MainWindow(QMainWindow):
 
     def _transition_message(self, event: TimerEvent) -> str:
         if event.to_state == SessionState.WORK:
-            return "Pausa finalizada. Hora de focar."
+            return self.strings["notification_break_over"]
         if event.to_state == SessionState.SHORT_BREAK:
-            return "Ciclo completo. Pausa curta."
+            return self.strings["notification_short_break"]
         if event.to_state == SessionState.LONG_BREAK:
-            return "Ciclo completo. Pausa longa."
-        return "Transicao de ciclo."
+            return self.strings["notification_long_break"]
+        return self.strings["notification_transition"]
 
     def _on_transition(self, event: TimerEvent) -> None:
         self._handle_event(event)
@@ -146,18 +154,25 @@ class MainWindow(QMainWindow):
     def _update_display(self) -> None:
         self.state_label.setText(self._state_label_text())
         self.timer_label.setText(self._format_time(self.engine.remaining_seconds))
-        self.cycle_label.setText(f"Ciclos completos: {self.engine.cycle_count}")
-        self.start_pause_button.setText("Pausar" if self.engine.is_running else "Iniciar")
+        self.cycle_label.setText(
+            self.strings["cycles_completed"].format(count=self.engine.cycle_count)
+        )
+        self.start_pause_button.setText(
+            self.strings["pause"] if self.engine.is_running else self.strings["start"]
+        )
+        self.reset_button.setText(self.strings["reset"])
+        self.skip_button.setText(self.strings["skip_break"])
+        self.settings_button.setText(self.strings["settings"])
         self.skip_button.setEnabled(
             self.engine.state in (SessionState.SHORT_BREAK, SessionState.LONG_BREAK)
         )
 
     def _state_label_text(self) -> str:
         if self.engine.state == SessionState.WORK:
-            return "Foco"
+            return self.strings["state_focus"]
         if self.engine.state == SessionState.SHORT_BREAK:
-            return "Pausa curta"
-        return "Pausa longa"
+            return self.strings["state_short_break"]
+        return self.strings["state_long_break"]
 
     @staticmethod
     def _format_time(total_seconds: int) -> str:

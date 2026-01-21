@@ -17,6 +17,7 @@ class AppConfig:
     work_minutes: int = 25
     short_break_minutes: int = 5
     long_break_minutes: int = 20
+    language: str = "pt-BR"
     theme: str = "light"
     sound_enabled: bool = False
     sound_file: str = ""
