@@ -11,12 +11,6 @@
 pip install -r requirements.txt
 ```
 
-- Instale o PyInstaller:
-
-```
-pip install pyinstaller
-```
-
 ### 2) Gerar o pacote
 
 Use o arquivo de spec ja configurado:
