@@ -1,0 +1,81 @@
+from __future__ import annotations
+
+from typing import Dict
+
+
+_STRINGS: Dict[str, Dict[str, str]] = {
+    "pt-BR": {
+        "app_title": "PyPomodoro",
+        "settings_title": "Configuracoes",
+        "work_label": "Trabalho (min)",
+        "short_break_label": "Pausa curta (min)",
+        "long_break_label": "Pausa longa (min)",
+        "theme_label": "Tema",
+        "sound_enabled_label": "Som ativado",
+        "sound_label": "Som",
+        "sound_placeholder": "Arquivo de som",
+        "select_sound": "Selecionar",
+        "auto_start_break": "Auto iniciar pausas",
+        "auto_start_work": "Auto iniciar trabalho",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "state_focus": "Foco",
+        "state_short_break": "Pausa curta",
+        "state_long_break": "Pausa longa",
+        "cycles_completed": "Ciclos completos: {count}",
+        "start": "Iniciar",
+        "pause": "Pausar",
+        "reset": "Resetar",
+        "skip_break": "Pular pausa",
+        "settings": "Configuracoes",
+        "notification_break_over": "Pausa finalizada. Hora de focar.",
+        "notification_short_break": "Ciclo completo. Pausa curta.",
+        "notification_long_break": "Ciclo completo. Pausa longa.",
+        "notification_transition": "Transicao de ciclo.",
+        "audio_filter": "Audio Files (*.wav)",
+        "all_files": "Todos os arquivos (*)",
+        "language_label": "Idioma",
+        "language_pt": "Portugues (Brasil)",
+        "language_en": "Ingles",
+    },
+    "en": {
+        "app_title": "PyPomodoro",
+        "settings_title": "Settings",
+        "work_label": "Work (min)",
+        "short_break_label": "Short break (min)",
+        "long_break_label": "Long break (min)",
+        "theme_label": "Theme",
+        "sound_enabled_label": "Sound enabled",
+        "sound_label": "Sound",
+        "sound_placeholder": "Sound file",
+        "select_sound": "Browse",
+        "auto_start_break": "Auto start breaks",
+        "auto_start_work": "Auto start work",
+        "save": "Save",
+        "cancel": "Cancel",
+        "state_focus": "Focus",
+        "state_short_break": "Short break",
+        "state_long_break": "Long break",
+        "cycles_completed": "Completed cycles: {count}",
+        "start": "Start",
+        "pause": "Pause",
+        "reset": "Reset",
+        "skip_break": "Skip break",
+        "settings": "Settings",
+        "notification_break_over": "Break finished. Time to focus.",
+        "notification_short_break": "Cycle complete. Short break.",
+        "notification_long_break": "Cycle complete. Long break.",
+        "notification_transition": "Cycle transition.",
+        "audio_filter": "Audio Files (*.wav)",
+        "all_files": "All files (*)",
+        "language_label": "Language",
+        "language_pt": "Portuguese (Brazil)",
+        "language_en": "English",
+    },
+}
+
+
+def get_strings(language: str) -> Dict[str, str]:
+    if language not in _STRINGS:
+        return _STRINGS["pt-BR"]
+    return _STRINGS[language]
