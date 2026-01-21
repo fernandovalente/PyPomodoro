@@ -58,6 +58,11 @@ class TimerEngine:
             return None
         return self._transition_to(SessionState.WORK, auto_start=self.auto_start_work)
 
+    def start_break(self) -> Optional[TimerEvent]:
+        if self.state != SessionState.WORK:
+            return None
+        return self._transition_to(SessionState.SHORT_BREAK, auto_start=True)
+
     def tick(self) -> Optional[TimerEvent]:
         if not self.is_running:
             return None

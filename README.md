@@ -1,5 +1,12 @@
 # PyPomodoro
 
+## Features
+
+- Pomodoro cycles with short and long breaks.
+- Configurable durations, theme, and language (Portuguese and English).
+- System notifications and default alert sound (`wood.mp3`).
+- Native desktop UI.
+
 ## Build executables (Windows and macOS)
 
 ### 1) Prepare the environment
@@ -21,13 +28,14 @@ pyinstaller pypomodoro.spec
 
 ### 3) Where the generated files are
 
-- Windows: `dist/PyPomodoro/PyPomodoro.exe`
-- macOS: `dist/PyPomodoro.app`
+- Windows: `dist/PyPomodoroWin/PyPomodoroWin.exe`
+- macOS: `dist/PyPomodoroMac.app`
 
 ### Important notes
 
 - Build the executable on each operating system. You cannot generate a `.app` on Windows or a `.exe` on macOS.
 - If a dependency is missing, install it with `pip` and run again.
+- The Windows executable icon uses `src/tomato.ico`. For macOS, use a `.icns` icon.
 
 ## License
 

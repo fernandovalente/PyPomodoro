@@ -19,8 +19,8 @@ class AppConfig:
     long_break_minutes: int = 20
     language: str = "pt-BR"
     theme: str = "light"
-    sound_enabled: bool = False
-    sound_file: str = ""
+    sound_enabled: bool = True
+    sound_file: str = "wood.mp3"
     auto_start_break: bool = True
     auto_start_work: bool = True
 

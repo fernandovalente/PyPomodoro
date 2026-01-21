@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import time
 from pathlib import Path
 
 from PySide6.QtCore import QTimer, Qt
@@ -19,6 +21,22 @@ from pypomodoro.core.notifications import send_notification
 from pypomodoro.core.sounds import SoundPlayer
 from pypomodoro.core.timer_engine import SessionState, TimerEngine, TimerEvent
 from pypomodoro.ui.settings_dialog import SettingsDialog
+
+
+def _debug_log(message: str, data: dict, hypothesis_id: str) -> None:
+    payload = {
+        "sessionId": "debug-session",
+        "runId": "pre-fix",
+        "hypothesisId": hypothesis_id,
+        "location": "main_window.py",
+        "message": message,
+        "data": data,
+        "timestamp": int(time.time() * 1000),
+    }
+    log_path = Path("/Users/valente/Documents/projects/pomodoro/.cursor/debug.log")
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload) + "\n")
 
 
 class MainWindow(QMainWindow):
@@ -71,16 +89,19 @@ class MainWindow(QMainWindow):
         self.start_pause_button = QPushButton(self.strings["start"])
         self.reset_button = QPushButton(self.strings["reset"])
         self.skip_button = QPushButton(self.strings["skip_break"])
+        self.start_break_button = QPushButton(self.strings["start_break"])
         self.settings_button = QPushButton(self.strings["settings"])
 
         self.start_pause_button.clicked.connect(self._toggle_start_pause)
         self.reset_button.clicked.connect(self._reset_timer)
         self.skip_button.clicked.connect(self._skip_break)
+        self.start_break_button.clicked.connect(self._start_break)
         self.settings_button.clicked.connect(self._open_settings)
 
         buttons_row.addWidget(self.start_pause_button)
         buttons_row.addWidget(self.reset_button)
         buttons_row.addWidget(self.skip_button)
+        buttons_row.addWidget(self.start_break_button)
         buttons_row.addWidget(self.settings_button)
 
         layout.addWidget(self.state_label)
@@ -114,14 +135,41 @@ class MainWindow(QMainWindow):
             self._handle_event(event)
         self._update_display()
 
+    def _start_break(self) -> None:
+        event = self.engine.start_break()
+        if event:
+            self._handle_event(event)
+        self._update_display()
+
     def _open_settings(self) -> None:
         dialog = SettingsDialog(self.config, self)
-        if dialog.exec() != dialog.Accepted:
+        result = dialog.exec()
+        # #region agent log
+        _debug_log(
+            "settings_dialog_result",
+            {"result": result, "accepted": result == dialog.Accepted},
+            "H2",
+        )
+        # #endregion
+        if result != dialog.Accepted:
             return
         self.config = dialog.get_config()
+        # #region agent log
+        _debug_log(
+            "settings_config_applied",
+            {
+                "work_minutes": self.config.work_minutes,
+                "short_break_minutes": self.config.short_break_minutes,
+                "long_break_minutes": self.config.long_break_minutes,
+                "theme": self.config.theme,
+                "language": self.config.language,
+            },
+            "H3",
+        )
+        # #endregion
         save_config(self.config)
         self.strings = get_strings(self.config.language)
-        self.setWindowTitle(self.strings["app_title"])
+        self._apply_language()
         self.engine.update_settings(
             work_minutes=self.config.work_minutes,
             short_break_minutes=self.config.short_break_minutes,
@@ -129,6 +177,17 @@ class MainWindow(QMainWindow):
             auto_start_break=self.config.auto_start_break,
             auto_start_work=self.config.auto_start_work,
         )
+        # #region agent log
+        _debug_log(
+            "engine_updated",
+            {
+                "state": self.engine.state.value,
+                "remaining_seconds": self.engine.remaining_seconds,
+                "is_running": self.engine.is_running,
+            },
+            "H3",
+        )
+        # #endregion
         self.sound_player.configure(self.config.sound_enabled, self.config.sound_file)
         self._apply_theme(self.config.theme)
         self._update_display()
@@ -137,7 +196,8 @@ class MainWindow(QMainWindow):
         self._update_display()
         message = self._transition_message(event)
         send_notification("PyPomodoro", message)
-        self.sound_player.play()
+        if event.from_state == SessionState.WORK:
+            self.sound_player.play()
 
     def _transition_message(self, event: TimerEvent) -> str:
         if event.to_state == SessionState.WORK:
@@ -162,10 +222,12 @@ class MainWindow(QMainWindow):
         )
         self.reset_button.setText(self.strings["reset"])
         self.skip_button.setText(self.strings["skip_break"])
+        self.start_break_button.setText(self.strings["start_break"])
         self.settings_button.setText(self.strings["settings"])
         self.skip_button.setEnabled(
             self.engine.state in (SessionState.SHORT_BREAK, SessionState.LONG_BREAK)
         )
+        self.start_break_button.setEnabled(self.engine.state == SessionState.WORK)
 
     def _state_label_text(self) -> str:
         if self.engine.state == SessionState.WORK:
@@ -174,6 +236,10 @@ class MainWindow(QMainWindow):
             return self.strings["state_short_break"]
         return self.strings["state_long_break"]
 
+    def _apply_language(self) -> None:
+        self.setWindowTitle(self.strings["app_title"])
+        self._update_display()
+
     @staticmethod
     def _format_time(total_seconds: int) -> str:
         minutes = max(0, total_seconds) // 60
@@ -181,6 +247,9 @@ class MainWindow(QMainWindow):
         return f"{minutes:02d}:{seconds:02d}"
 
     def _apply_theme(self, theme: str) -> None:
+        # #region agent log
+        _debug_log("apply_theme", {"theme": theme}, "H4")
+        # #endregion
         if theme == "dark":
             self.setStyleSheet(
                 """

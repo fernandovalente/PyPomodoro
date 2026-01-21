@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import time
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -19,6 +21,22 @@ from PySide6.QtWidgets import (
 
 from pypomodoro.core.config import AppConfig
 from pypomodoro.core.i18n import get_strings
+
+
+def _debug_log(message: str, data: dict, hypothesis_id: str) -> None:
+    payload = {
+        "sessionId": "debug-session",
+        "runId": "pre-fix",
+        "hypothesisId": hypothesis_id,
+        "location": "settings_dialog.py",
+        "message": message,
+        "data": data,
+        "timestamp": int(time.time() * 1000),
+    }
+    log_path = Path("/Users/valente/Documents/projects/pomodoro/.cursor/debug.log")
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload) + "\n")
 
 
 class SettingsDialog(QDialog):
@@ -99,11 +117,30 @@ class SettingsDialog(QDialog):
         self.setFixedWidth(360)
 
     def get_config(self) -> AppConfig:
+        self._work_input.interpretText()
+        self._short_break_input.interpretText()
+        self._long_break_input.interpretText()
+        language = self._language_select.currentData()
+        if not language:
+            language = "pt-BR" if self._language_select.currentIndex() == 0 else "en"
+        # #region agent log
+        _debug_log(
+            "settings_get_config",
+            {
+                "work_minutes": self._work_input.value(),
+                "short_break_minutes": self._short_break_input.value(),
+                "long_break_minutes": self._long_break_input.value(),
+                "language": language,
+                "theme": self._theme_select.currentText(),
+            },
+            "H2",
+        )
+        # #endregion
         return AppConfig(
             work_minutes=self._work_input.value(),
             short_break_minutes=self._short_break_input.value(),
             long_break_minutes=self._long_break_input.value(),
-            language=self._language_select.currentData(),
+            language=language,
             theme=self._theme_select.currentText(),
             sound_enabled=self._sound_enabled.isChecked(),
             sound_file=self._sound_path.text().strip(),
